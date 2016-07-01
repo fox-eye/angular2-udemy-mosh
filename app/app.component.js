@@ -1,4 +1,4 @@
-System.register(['angular2/core', './zippy.component', './SignUpForm/signup-form.component'], function(exports_1, context_1) {
+System.register(['angular2/core', './zippy.component', './change-password-form/change-password-form.component'], function(exports_1, context_1) {
     "use strict";
     var __moduleName = context_1 && context_1.id;
     var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
@@ -10,7 +10,7 @@ System.register(['angular2/core', './zippy.component', './SignUpForm/signup-form
     var __metadata = (this && this.__metadata) || function (k, v) {
         if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
     };
-    var core_1, zippy_component_1, signup_form_component_1;
+    var core_1, zippy_component_1, change_password_form_component_1;
     var AppComponent;
     return {
         setters:[
@@ -20,8 +20,8 @@ System.register(['angular2/core', './zippy.component', './SignUpForm/signup-form
             function (zippy_component_1_1) {
                 zippy_component_1 = zippy_component_1_1;
             },
-            function (signup_form_component_1_1) {
-                signup_form_component_1 = signup_form_component_1_1;
+            function (change_password_form_component_1_1) {
+                change_password_form_component_1 = change_password_form_component_1_1;
             }],
         execute: function() {
             AppComponent = (function () {
@@ -36,8 +36,8 @@ System.register(['angular2/core', './zippy.component', './SignUpForm/signup-form
                 AppComponent = __decorate([
                     core_1.Component({
                         selector: 'my-app',
-                        template: "\n    <div>\n      <zippy title=\"This is my title\">\n        This is the content of the zippy\n      </zippy>\n\n      <zippy title=\"This is my title 2\">\n        This is the content of the zippy, second try\n      </zippy>\n    </div>\n    <signup-form></signup-form>\n    ",
-                        directives: [zippy_component_1.ZippyComponent, signup_form_component_1.SignUpFormComponent]
+                        template: "\n    <div>\n      <zippy title=\"This is my title\">\n        This is the content of the zippy\n      </zippy>\n\n      <zippy title=\"This is my title 2\">\n        This is the content of the zippy, second try\n      </zippy>\n    </div>\n    <change-password-form></change-password-form>\n    ",
+                        directives: [zippy_component_1.ZippyComponent, change_password_form_component_1.ChangePasswordFormComponent]
                     }), 
                     __metadata('design:paramtypes', [])
                 ], AppComponent);

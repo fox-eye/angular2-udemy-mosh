@@ -2,7 +2,7 @@ import {Component} from 'angular2/core';
 
 @Component({
   selector: 'newsletter-form',
-  templateUrl: 'app/form/newsletter.template.html',
+  templateUrl: 'app/newsletter-form/newsletter.template.html',
   styles: [`
     #newsletter {
       width: 600px;

@@ -1,6 +1,6 @@
 import {Component} from 'angular2/core';
 import {ZippyComponent} from './zippy.component';
-import {SignUpFormComponent} from './SignUpForm/signup-form.component'
+import {ChangePasswordFormComponent} from './change-password-form/change-password-form.component'
 
 @Component({
     selector: 'my-app',
@@ -14,9 +14,9 @@ import {SignUpFormComponent} from './SignUpForm/signup-form.component'
         This is the content of the zippy, second try
       </zippy>
     </div>
-    <signup-form></signup-form>
+    <change-password-form></change-password-form>
     `,
-    directives: [ZippyComponent, SignUpFormComponent]
+    directives: [ZippyComponent, ChangePasswordFormComponent]
 })
 
 export class AppComponent { 
