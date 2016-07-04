@@ -27,7 +27,7 @@ System.register(['angular2/core'], function(exports_1, context_1) {
                 NewsletterFormComponent = __decorate([
                     core_1.Component({
                         selector: 'newsletter-form',
-                        templateUrl: 'app/form/newsletter.template.html',
+                        templateUrl: 'app/newsletter-form/newsletter.template.html',
                         styles: ["\n    #newsletter {\n      width: 600px;\n    }\n  "]
                     }), 
                     __metadata('design:paramtypes', [])
