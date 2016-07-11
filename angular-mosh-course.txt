@@ -1,0 +1,972 @@
+Mosh videos - angular 2
+-------------------------
+- Components
+Handles template, data and behaviour of a view = view component.
+At least one root component.
+Component is just a plain typescript class with a 'Component' decorator.
+
+It's a typescript class that can have:
+- properties : datas for the view
+- method: behaviour of the view
+
+Decoupled from dom. We use binding to link properties and methods of the
+component. It can be easily unit tested, without refering to the dom.
+
+- Services
+Plain class with non user interface logic : http calls, logging, business rules, ...
+Any logic that is not about the view should be in a service.
+
+- Router
+Responsible for navigation.
+
+- Directive
+Similar to components but work with the dom. No template. Used to control or extend the behaviour to existing dom elements.
+Directive is just a plain typescript class with a 'Directive' decorator.
+
+In typescript, each file is considered a module. And a module exports one ore more things.
+We can export to make available to other modules, then import.
+
+Angular nows a class is a component by looking for specific 'attributes' or meta datas.
+That's why we have to apply a component decorator to the class.
+
+import {Component} from 'angular2/core' -> imports the Component decorator in the current module.
+
+Decoractors have to be prefixed by an '@' sign.
+
+'providers' attribute, in the components decorators allows to tell angular what are the dependencies for the 
+component (for dependency injection).
+
+For directives, host property on Directive decorator allows to subscribe to events raised from this element.
+We supply an object of key value pairs. We supply event on the key, and the handler method in the value.
+host: {
+ '(focus)': 'onFocus()'
+}
+(focus) = event. Parentheses means we are binding the onFocus method from the directive
+to the focus event.
+
+ElementRef = service that gives access to the host element
+Render = service to modify the element.
+
+BINDINGS
+---------
+
+Property binding.
+-----------------
+It's the fact to bind a dom property to a component property. It's a one way binding, from component
+to the dom.
+
+{{ }} Interpolation is a syntaxic sugar for property binding.
+When angular compiles the templates, it converts interpolations in property bindings.
+We bind a property of a dom element (not to confuse with html attributes!) like src, to a property in the component.
+Syntaxes:
+1) [src]="imgUrl"
+2) bind-src="imgUrl"
+Equivalent to src="{{ imageUrl }}"
+
+What should we use ?
+For everything like adding dynamic text content inside tags (between elements), prefer {{}}
+We could use 2) notation for example in this case but it's not clean:
+-> <span [textContent]="text"></span>
+
+Property binding works 'one way', from component to the dom. If the property in the component changes,
+angular updates the dom automatically. But changes in the dom are not reflected in the component!
+ 
+Class binding
+-------------
+It's a variation of property bindings. Allows to add a class conditionally to a state of the component.
+[class.active]="isActive"
+
+active = name of the class to apply
+isActive is an expression to evaluate (binding expression). If the expression is truthy, the class is added.
+
+Style binding
+--------------
+Variation of property binding.
+[style.backgroundColor]="isActive ? 'blue': 'red'"
+
+Expression is evaluated, and returned value becomes the value of the background-color style property in our element.
+
+Event binding
+--------------
+It's used to handle events coming from the dom (keystrokes, mouse mouvements, etc...)
+
+2 syntaxes possible:
+- <button (click)="">Submit</button>
+- <button on-click="onClick()"></button>
+
+click is the event name and in "onClick()" you put a binding expression, which can be any
+expression but often a method in the component.
+
+You can also pass in an $event object to the method and get it in the component.
+In case of a simple dom element, this $event is the dom event object, but for custom components
+raising events, it's different.
+
+Two way binding
+----------------
+It's in fact not a real two way binding but a combination of property binding and event binding.
+Data always flaws in one direction. This two way binding is just a syntaxical sugar.
+
+title is a property in the component.
+
+We could just emulate two way binding like this:
+<input type="text" [value]="title" (input)="title=$event.target.value" />
+
+But to simplify, there is a ng-model directive.
+
+<input type="text" [(ngModel)]="title" />
+
+[()] = combination of property and event binding
+in the binding expression, we put the component property to update.
+Behind the scene, ngModel directive, applies property and event binding into our input element.
+
+Alternate syntax is a 'bindon' prefix
+bindon-ngModel="title"
+
+MORE ABOUT COMPONENTS
+----------------------
+We can define the 'public' behaviour of a component with some properties.
+We can mark some properties of our component as 'input' or 'output' properties. They will be available for property or event bindings.
+
+For example:
+<button 
+	[value ]="..."
+	(click)="">
+
+
+We bind the value property to some properties in our component. We use it to pass data to our
+component.
+Value = input property.
+
+button as also events like click that we can bind to methods in our components.
+click = output property.
+
+Input properties
+--------------
+Input and output properties are the 'public api' of the component.
+
+a property declared in a component is 'private', it's not visible to the consumer of the compoent.
+To make it public, we need to declare it as a 'input' property. For it, two ways:
+
+1) Use a Input decorator
+@Input() isFavorite = false;
+Not not forget: import {Input} from 'angul...
+
+2) Use the 'inputs' array, an option of the component decorator.
+template: '<i....',
+inputs: ['isFavorite']
+
+Which method to select ?
+2) Advantage is that we can declare clearly all the properties that are input in one place
+(component meta data)
+But we use 'magic strings'. It assumes we have the exact same name as a property in the
+component. In case of refactoring, we should update it.
+For this reason, 1) method is preferable. 
+For clarity, we can put these input properties at the top.
+
+Sometimes, we want to expose input properties with a different name of what exists
+in the component.
+
+With 1) we can do that
+@Input('is-favorite') isFavorite
+
+Or with 2) inputs: ['isFavorite:is-favorite']
+
+Output properties
+------------------
+If we want our component to raise a custom event.
+The consumer could use it.
+
+Two things to do :
+ - declare a property of type 'EventEmitter' using a class 'EventEmitter', used to publish events.
+  import EventEmitter class import {EventEmitter} from 'angular2/core'
+  name of the property should be the name of the event we want to emit.
+  change = new EventEmitter();
+ - as the property is 'private', we need to declare it as an 'output' property with:
+  - an output decorator
+  @Output change = new EventEmitter();
+  - an output property as an array, in the component decorator 
+ - To publish the event, use the emit() property of the EventEmitter instance, with an 
+ optional hash of parameters to pass in
+   this.change.emit({});
+
+Then if an external component is interested by this event, we use event binding:
+<component (change)="externalMethod($event)"></component>
+
+$event gives access to the additional date wih can pass on the emit method.
+
+After setting the property of a component as an input property, we can use property binding on it to set it's value from the
+outside. This way, we can bind the property of the component to a property coming from an outside component for ex.
+
+Templates
+----------
+For external template: templateUrl key on Component/Directive decorator.
+Path starts from app root.
+In case of external template, there is an extra http request.
+
+For small templates, prefer inline templates.
+
+Styles 
+-------
+Css styles required by component. They are scoped to the component and will not be applyied outside of it!
+Define them as a decorator property, either inline or external.
+styles: []
+	styleUrls: []
+
+Same as template, external requires extra http request.
+
+TEMPLATES
+----------
+*ngIf / [hidden]
+-----
+Hide / Display parts of the template based on a condition
+
+1) Use ngIf directive
+*ngIf=""
+
+"" is an expression. If expression is truthy, content will be inserted in the dom.
+If falsy, it will be removed from the dom.
+
+2) Bind to the hidden property of the dom element we want to hide
+<div [hidden]="courses.length === 0"></div>
+
+If we look the code, solution 1 removes or add element in the dom, 
+but solution two just adds or remove a 'hidden' attribute, the element is in the dom, just
+hidden!
+
+What is the best option ?
+- If small element tree to display = 2) is ok
+- if the things to display are complex, 1) is better
+because 1) forces angular to continue to check elements even if hidden and display takes ressources.
+
+One exception:
+--------------
+If we continously need to display/hide a large tree, 2) is better
+
+ngSwitch
+-----
+Display an element and its children from a set of possible elements,  based on  a 
+condition (equivalent of switch or if/else)
+
+<ul>
+	<li><a (click)="viewMode='map'">Map View</li>
+	<li><a (click)="viewMode='list'">List View</li>
+</ul>
+
+<div [ngSwitch]="viewMode">
+ <template [ngSwitchWhen]="'map'">Map view content</template>
+ <template [ngSwitchWhen]="'list'">List view content</template>
+</div>
+
+Binding the ngSwitch directive to the viewModel property of the component.
+
+Same thing with ngSwitchWhen, we bind the directive to a value (the selected value of viewMode)
+
+If value of viewMode = 'map' template is activated and its content rendered in the dom.
+(template html 5 tag content is not selectable, ignored by the browser (not rendered) until it is inserted in the dom by
+javascript! The template tag is never rendered, only the content of it!)
+
+We can also use ngSwitchDefault if no value matches, to display a specific element by default. There is not binding here so...
+<template ngSwitchefault>Content by default...</template>
+
+ngFor
+---
+<li *ngFor="#course of courses"></li>
+* is part of the syntax
+When using ngFor, we need in fact a template, repeated for each iteration. But we
+did not specified a <template> explicitly! Asterisk is a syntaxic sugar that tells angular
+to treat the <li> element as a template.
+
+If we didn't used it, we'd had to to this :
+
+<ul>
+	<template ngFor [ngForOf]="courses" #course #i=index>
+		<li></li>	
+	</template>
+</ul>
+ngFor without asterisk, do not take a value, 
+add a ngForOf other directive, bound to the property to iterate, and add two extra
+local variables!
+
+What the * does is that when it's encountered, angular will transform the li in template element like above.	
+
+#course of courses is not an expression, it's a micro syntax understood by angular
+ -> #course is a local variable, 'of', keyword, and the variable courses we want to iterate
+ 
+We can add other local variables, prefixing them by #
+For example, we can store the special variable 'index' in a local variable, and display it with interpolation
+
+<li *ngFor="#course of courses, #i=index">
+ {{ i + 1 }} - {{ course }}
+</li>
+ 
+Pipes
+--
+Used to format data (former name was filter in 1.x)
+
+Some are built in. We can also create custom.
+
+Ex:
+
+{{ name | uppercase }} 
+| = pipe operator
+uppercase = pipe
+
+We can pass parameters
+{{ rating | number:'2.2-2' }}
+{{ date | date:'par1':'par2':'par3' }}
+
+To create a custom pipe
+
+1) Import
+import {Pipe, PipeTransform} from 'angular2/core';
+Pipe = decorator
+PipeTransform = typescript interface
+
+2) decorator + class
+@Pipe({ name: 'summary'})
+name is the name of the keyword used in the template
+
+export class SummaryPipe implements PipeTransform {
+	transform(value:string, args: string[]) {
+		var limit = (args && args[0]) ? parseInt(args[0]) : 50;
+		return value.substring(0, limit);	
+	}	
+}
+
+transform is a method signature present in the interface
+two arguments (second is optional)
+- value is the value to transform, 
+- args is an option array of arguments. If no arguments, empty array.
+
+In the component using the template, add a 'pipes' key
+to register the pipe.
+import {SummaryPipe} from '.summary.pipe';
+@Component({
+	pipes: [SummaryPipe]
+});
+
+ngClass
+---
+We saw a solution to add classes, named 'class binding'.
+But if we have multiple class to manage, it's cleaner to use ngClass directive.
+
+[ngClass]="{
+ 'glyphicon-star-empty': !isFavorite,
+ 'glyphicon-star': isFavorite,	
+}"
+
+Here, We bind ngClass directive to an expression.
+In this expression, an object with key values pairs. keys = class names.
+If one or more of the values are truthy, the classes are added to the element.
+
+ngStyle
+---
+We saw a solution named 'style binding'.
+Same principle as ngClass here.
+Avoid the use of styles, prefer classes!!
+
+Elvis operator
+------
+?.
+Same as coffeescript. 
+Guars against null properties in property paths.
+
+When there is a null property in a object, and we want to avoid
+an error in case the property does not exist, we can :
+
+task = {
+	assignee: null
+}
+
+{{ task.assignee?.name }}
+
+We can use it multiple times in a path.
+
+{{ task.assignee?.role?.name }}
+If either assignee or role is null, we have a blank string. Otherwise, the name of
+the role is rendered.
+
+ng-content
+-----
+A way to insert content into the template of a component, from the outside.
+
+<bs-panel>
+ This content should be inserted into the component template, somewhere...
+</bs-panel>
+
+We need to add an insertion point inside the template
+ex:
+<div class="panel-body">
+	<ng-content></ng-content>
+</div>
+
+It replaces ng-transclude from angular 1
+
+We can have multiple insertion points. We can use a selector for that
+<ng-content select=".heading"></ng-content>
+-> any element with the css selector .heading will be placed here.
+
+FORMS
+-------
+Two types of forms: 
+- template driven forms: easier, but with limited control on validation
+- model driven forms: full control on validation
+
+Control and ControlGroup
+-----
+Control class
+Represents a single input field in a form. It has properties that report the value and
+the state of this input field:
+-  value
+- touched / untouched
+- dirty /pristine
+- valid
+- errors
+
+ControlGroup
+It represents a group of controls in a form.
+Each form is itself a control group because it contains at least one control.
+But we can divide things with a part of the form dedicated to shipping address
+and another one for billing address.
+
+All the properties of Control are also available in ControlGroup
+For ex: valid property is true if all controls in that group are valid.
+Same things for errors, we can gather all validation errors from that group!
+
+This is in fact a composite pattern where Control and ControlGroup derive from a
+class called 'AbstractControl'. Also, control inherit from ControlGroup.
+
+AbstractControl contains all the properties mentionned before. Control and ControlGroup inherits them from the
+base class AbstractControl.
+
+To create an angular form, we need to create a ControlGroup object from the form, and a Control
+object for each input fields.
+Two ways to create them: 
+- Implicitely: angular manages everything. Its simpler if we need basic form with basic validation.
+- Explicitely: we have more control on validation logic + unit test them!
+
+ngControl
+----
+To create Control objects, from Control classes, we need to associate them with inputs.
+We do that connexion with a directive called ngControl.
+
+<input type="text" ngControl="firstName" />
+The name 'firstName' is the name of the control object. Every control object has a name, uniquely identifying it.
+This is implicit here because angular creates the control object for us.
+
+if we create temporary  local variable in our template (starting with #) and set it to 'ngForm'
+on an input field, this is a special syntax that angular recognises: it sets it to the ngControl
+directive applied to this input field.
+
+In fact, the directive ngControl contains a reference to the Control instance and also all the properties available
+in the control instance ias touched, error, pristine, etc...
+
+Validation Rules
+----
+With Implicit mode, we have only 3 different validations accessible :
+- required
+- maxlength
+- minlength
+
+<div class="form-group">
+	<input 
+		ngControl="firstName"
+		#firstName="ngForm"
+		id="firstName"
+		type="text"
+		class="form-control"
+		required />
+	<div class="alert alert-danger" *ngIf="firstName.touched && !firstName.valid"></div>
+</div>
+
+We use #firstName as a reference to the ngControl directive, containing properties of the control instance.
+
+As in 1.x, angular adds some extra classes to the input, like ng-touched, ng-dirty, ng-invalid, etc...
+
+Showing specific validation errors
+-----------
+What if a field needs multiple field attributes ?
+
+<div class="form-group">
+	<input 
+		ngControl="firstName"
+		#firstName="ngForm"
+		id="firstName"
+		type="text"
+		class="form-control"
+		required
+		minlength="3" />
+	<div *ngIf="firstName.touched && firstName.errors>
+		<div class="alert alert-danger" *ngIf="!firstName.errors.required">
+			This is required !	
+		</div>
+		<div class="alert alert-danger" *ngIf="!firstName.errors.minlength">
+			This has to have at least 3 characters!	
+		</div>
+	</div>
+</div>
+
+ngForm
+-----
+It's a directive that binds the entire form to a ControlGroup object.
+We don't need to declare it explicitely: when angular sees a form element, it automatically 
+applies ngForm to it.
+
+in ngControl, we have access to an errors property, which can be null, or an object
+with a key for each validation rules. 
+
+We can also explicitely apply ngForm on an element by adding <ng-form></ng-form> or a ngForm attribute.
+
+ngForm has a property who is an eventEmitter.
+So, we can bind to ngSubmit to a method in the component. This method is called when user clicks the submit button.
+
+<form #f="ngForm" (ngSubmit)="onSubmit(f.form)">
+#f is a local variable. When set to ngForm, angular understands it has to pass in the instance of the ngForm directive.
+This object, we have a property 'form' referencing the associated ControlGroup object.
+
+in the ControlGroup instance, we have a 'value' key with a object containing all data of the form, ment to be
+sent to the server.
+
+Disabling the submit button
+------
+If form is invalid.
+
+We can bind the disable property of the button to an expression.
+<button type="submit" [disabled]="!f.valid"></button>
+
+BUILD FORM WITH COMPLEX VALIDATION (model driven form)
+-----------------------------------------------------------
+In template, to target a specific control object we can do : 
+form.controls['username'].valid
+
+form = 
+[ngFormModel]="form" which is the reference in the component to the ControlGroup object
+
+but we can also in template, declare a local variable set to ngForm
+#username="ngForm"
+
+and do simply: username.valid
+
+Using FormBuilder
+-----
+Allows to create a ControlGroup instance more easily.
+
+fb.group({
+	username: []
+});
+[] = array with each key being a parameter of the Control instance. All optional.
+
+Custom validation rules
+--------------
+* Validation passes: return null
+* Validation fails: return { <validationRule>:<value> } -> an object with the key being the name of validation rule.
+Value can be anything (true, an object, etc...)
+
+For code, see usernameValidators.ts
+
+We can put this validation function where we want, but it's better to put it as a static method in a dedicated class.
+
+in the FormBuilder, if we need to pass more than one validator, use Validators.compose() method, passing an array of validators.
+
+Async validation
+---------
+The difference is that we need to return a promise here, as it's the result of an asyncronous operation.
+
+In typescript, arrow function expressions (lambda expressions) are a way to shorten anonymous functions.
+
+function(message) {
+ console.log(message);
+}
+
+(message) => {
+	console.log(message);
+}
+
+Can remove the () if there is one argument
+
+message => { console.log(message); }
+
+
+When creating a promise, it's state will be 'pending'. When the operation is completed, we can 
+return a value to the consumer of the promise with:
+resolve(1)
+or return an error passing the reason of the error:
+reject()
+
+Async validators can be added as the third argument in the array given for each control in FormBuilder instance.
+The second index value of the array is for 'sync' validators.
+
+Showing a loader image (during async validation progress)
+---------
+how to know that the async validator is in progress ?
+In the control object instance, referenced inside the ngControl directive, we have access to the pending state, that is 
+'on' when one of the async validators is in progress.
+-> in a ngif we can check for ex: username.control.pending
+
+Validating upon form submit
+----------
+To add errors once the user submits the form (as form example to verify that a login/password is correct)
+
+in the ControlGroup instance, we have a find method to access a specific control. We can then user the setError method to add an error
+using the same logic that in custom validators.
+ex: this.form.find('username').setErrors({ invalidLogin: true});
+
+REACTIVE EXTENSIONS (observables)
+----------------------------------
+A library for composing asynchronous and event-based programs
+using observable sequences and LINQ-style query operators.
+
+In fact, this API is made to avoid what we call 'callback hell', that is to say, the fact to have multiple nested callbacks.
+It allows to write this in a cleaner and more readable way.
+
+Observables
+------------
+
+At the core of RX, we have observables. It's an "asynchronous data stream". A stream of data is a flow in which data is expected to arrive at different moments.
+
+Example of that stream:
+- dom events : they arrive asynchronously from the user actions.
+- web sockets: a permanent two way connexion between server and client.  Data can flow as an asynchronuos stream to the client.
+- web workers: to create background tasks.
+- ajax calls:  we don't really have a stream here because you just receive one response, even if it's asynchronous, but it enters in the category...
+
+So in the application, if we are working into an asynchronous data stream and we have a lot of nested callbacks, maybe it's good to refactor it with
+rxjs (model that async data stream as an observable).
+
+Observables can be seen as a collection.
+With real collection, we iterate them, and pull one object at a time.
+With observables, we subscribe to them and give them a callback function. When a new data element arrives, callback is executed and we have the data. 
+In fact, with observables, we subscribe to a stream and observe the data arriving through this stream, by triggering a single callback.
+Better than multiple nested callbacks.
+
+To declare an observable
+we can do Observable.from..
+--> from = from property
+--> fromArray
+--> fromEvent
+--> fromPromise
+
+var obs = Observable.fromEvent($('#search'), 'keyup');
+
+Then we subscribe to the observable, passing a callback
+
+When you press a key,an event is fired, placed in the observable stream, and then pushed to us.
+
+obs.subscribe(function(data) {
+ console.log(data);
+});
+
+data is the event object.
+
+Observable operators
+----
+We can use operators to transofm, filter, aggregate.
+
+- map= takes an input and transforms it into a different form.
+- filter = get the data elements in the stream if they satisfy some criteria
+- distinctUntilChanged: does not send anything coming from data stream if nothing has changed in the data
+
+Transforming observables
+-----
+In de demo code, we see that when the request is made to spotify, we can get the promise. This promise can be used to create an observable from it : when the promise is resolved, the json object we get from the server will be pushed into our observable stream.
+
+flatMap: in the demo, we have elements (each event) in a main observable, but with the map to get the artists, we nest an observable in the first observable.
+So, if we have an objservable, where each element in that observable is itself an observable, flattMap is a way to collapse the hierarchy and return the data element we are interested in.
+
+Unsubscribe observable
+-----
+We can cancel a subscription at any time.
+The subscribe method return a subscription object. We can rely to it to unsubscribe.
+
+var subscription = keyups.subscribe(data => console.log(data));
+subscription.unsubscribe();
+
+Importing operators
+----
+Instead of imporing the 'full' observable class, containing all the 
+operator, we can use an stripped down, containing just a few operators.
+
+For performance critical app (as mobile are), it's better to import this version, and 
+manually import the observables we need.
+
+So instead of :
+import {Observable} from 'rxjs/Rx';
+
+use:
+import {Observable} from 'rxjs/Observable'
+
+Now, to import the operators we need:
+import 'rxjs/add/operator/debounceTime';
+import 'rxjs/add/operator/filter';
+
+Connecting to the server
+--------------------
+A simple restful API
+----
+
+Getting data from the server
+-------
+To access our restful API in angular, we use http class. It's an abstraction of http request.
+It provides methodes, mapping to http methods
+
+- get()
+- post()
+- put/patch()
+ put = to send a complete representation of the ressource for update
+ patch = to send a partial of the data to update (only some properties)
+- delete()
+- head (to get only the header metatata) 
+ useful to check the existence of a ressource without returning the complete representation
+
+
+To use Http class, we have to import it:
+import {Http} from 'angular2/http';
+
+But as this http module is not in the core angular 2 file, we need to link another file to our app.
+<script src="node_modules/angular2/bundles/http.dev.js"></script>
+
+We need to inject this http class in the constructor of our service (dependency injection)
+Do not just create a new instance of the service in the constructor manually,
+it is difficult to test and it introduces a tight coupling between the service and the http class.
+
+by convention, private fields are prefixed with an underscore (see related post.service.ts)
+
+The get method takes a url as first parameter and returns an observable (as for each http method).
+
+For ex: 
+this._http.get("http://machin.com/posts");
+
+We will return the observable of 'response' to the component for it to subscribe. Response is the full response object. 
+But we should not return all the response object as its purpose is to encapsulate the http communication. 
+We should only expose the DATA; we can do that with a map operator, returning the data we need
+
+return this._http.get("http://machin.com/posts")
+	.map(res => res.json());
+
+Don't forget to import map as angular uses a stripped down version of rxjs by default.
+
+Send data to the server
+-----
+this._http.post("url", requestBody)
+
+requestBody should be a string!
+
+So -> this._http.post("url", JSON.stringify(requestBody));
+
+Dependency injection
+------
+We now need to inject the service to our component. Few steps to do this:
+1) Mark our class available for dependency injection. We do that using the Injectable annotation (see code) to decorate it.
+
+import {Injectable} from 'angular2/core';                          
+                                               
+@Injectable()
+
+
+2) In app component, import the service
+
+3) Inject the service in the constructor of the component and subscribe to the returned 
+observable.
+
+constructor(private _postService: PostService) {
+	this._postService.getPosts().subscribe(posts => console.log(posts));    
+}
+
+
+We should have an error about 'DI Exception' : No Provider for PostService
+
+Why does it happens ?
+
+We Angular tries to instantiate the component where the service is used, it looks
+at the constructor. Sees a parameter of type 'PostService'. But it does not now where
+is located the PostService.
+
+Behind each component there is a class called Injector, responsible for DI inside our
+component. It fails here because the injector does not now about the existence of the post
+service AND of any of the service dependencies.
+
+We do it in the @Component metadata, with the 'providers' property.
+providers: [PostService]
+As PostService has a http class dependency, we could add:
+providers: [PostService, Http]
+
+But... the Http class itself has dependencies...
+
+To avoid adding all these classes, we can use a shortcut
+import {HTTP_PROVIDERS} from 'angular2/http';
+IT's a constant array that includes Http class and all it's dependencies.
+
+providers: [PostService, HTTP_PROVIDERS]
+
+Now, service can be used.
+
+Component lifecycle hooks
+------------
+In the previous example, we put server call directly in the constructor.
+According to best practices, the constructor should be lightweight and not include
+costly operations. It should just do light initialisations.
+
+We should put this code elsewhere ? Where ?
+We can use the different hooks provided by the angular and called by angular during the 
+component lifecycle: 
+- OnInit: be notified when a component is first instantiated. It's called after the constructor.
+- OnDestroy
+- DoCheck
+- OnChanges
+- AfterContentInit
+- AfterContentChecked
+- AfterViewInit
+- AfterViewChecked
+
+Do use these hooks, we have to implement one or more interfaces in the component.
+Each interface has a method.
+
+Import the interface:
+import {OnInit} from 'angular2/core';
+
+Implement the interface in the component:
+export class AppComponent implements OnInit {
+ ...
+
+Use the method declared in the interface in the component. By convention
+it's the name of the interface, prefixed by 'ng' 
+export class AppComponent implements OnInit {
+	ngOnInit() {
+		...	
+	}	
+}
+
+Static type checking
+-----
+In our implementation of the createPost method, we have 
+a post parameter of type 'any'. It means we can pass any object.
+So if we pass a date for example, typescript will not complain and
+we'll have an exception in our API.
+In typescript, if we don't set a type for a property, a parameter, it
+is by default of type 'any'. 
+We need to explicitely set the type of our post parameter.
+We do this by defining a class (here post.ts) with a few fields based on what
+the api accepts.
+
+export interface Post {
+ userId: number;
+ title: string;
+}
+
+Interfaces allows to have compile time type checking.
+
+Then we import our interface in the PostServide
+import {Post} from '.post';
+
+Then we annotate the post parameter with a type, corresponding to 
+the interface defined before.
+
+createPost(post: Post) {
+ ...
+}
+With this, if a wrong argument is passed in, we will have compile type
+type checking, avoiding us to pass in errors;
+
+Instead, we need to pass an object that conforms to the Post interface.
+If we want to make an attribute optional, we can do it in the interface.
+Otherwise the compiler will complain. Just add a question mark after
+the key.
+...
+userId: number;
+id?: number;
+...
+
+Same concept for subscribe method, the type of the returned posts is any.
+If I try for example to return the first post, I don't have the intellisense.
+To solve this, we need to apply a type annotation to our related method.
+
+For the moment, the return type of our getPosts() method is:
+Observable<any> (observable of any)
+
+We can change this to Observable<Post[]>
+
+getPosts() : Observable<Post[]> {
+	...
+}
+
+Of course, as Observable is not recognized, we need to Import it.
+
+import {Observable} from 'rxjs/Observable';
+
+Showing a loader icon
+------
+See code
+
+Using Promises
+-------
+If you want, we can easily convert an observable into a promise.
+we can call the toPromise() operator at the end of the chain in the 
+observable. 
+We also have to modify the returned type
+() : Promise<Post[]>
+
+We also need to import the toPromise operator as the observable library 
+http uses is a light version.
+
+import 'rxjs/add/operator/toPromise';
+
+Accessing cross domain ressources
+-------
+Browsers have a security rime called Same Origin Policy, which prevents to make cross domain requests.
+
+Workarounds : 
+JSONP
+--
+Older approach, supports only get requets
+
+- Instead of Http class, use Jsonp class.
+- For providers key, use JSONP_PROVIDERS instead of HTTP_PROVIDERS
+
+CORS
+--
+Needs some extra work on the server and on the client, but without
+the limitations of JSONP.
+
+The client needs to add additional headers in the request object, asking
+for permissions to the ressources on the server.
+And the server response returns some additional headrs too, telling which 
+domains have the right to access these ressources.
+
+For the client side of things, adding these headers is easy:
+- create a headers object
+
+var headers = new Headers({
+	"access-control-request-method": 'POST'
+});
+
+- create a RequestOptions object, passing it the headers object
+var options = new RequestOptions({
+	headers: headers
+});
+
+- finally pass in in this options object when making the http request
+this_http.get("url", options); 
+
+- CROSS-Origin Resource Sharing (CORS)
+
+Building single page apps (routeurs)
+-------------------------------------
+To enable routing, we need 3 steps:
+- add a reference to the router script in the index.html
+- set the base url for the angular app
+  <base href="/">
+  The / means the angular app is the application root, or the base url from which
+  all other urls are constructed.
+  Angular will use this to compose relative urls. You just give the base url of the app here.
+  For more info about relative urls, read this: 
+  http://www.webreference.com/html/tutorial2/3.html
+- register route providers 
+  We do this once during the application boot in boot.ts
+  We import ROUTER_PROVIDERS, an array of all router classes needed by dependecy injection
+  We thhen pass this array as the second argument of the bootstrap function. It's a
+  place where we can pass any providers that should be available anywhere in the app.
+  This way you don't need to import them everywhere. We could to the same with HTTP_PROVIDERS
+  boostrap(AppComponent, [ROUTER_PROVIDERS]);
+
+Configure routes
+------
