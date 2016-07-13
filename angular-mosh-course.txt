@@ -970,3 +970,190 @@ To enable routing, we need 3 steps:
 
 Configure routes
 ------
+To configure routes:
+- import the RouteConfig decorator in the module.
+import {RouteConfig} from 'angular2/router';
+If we apply it to a component, it becomes a 'routing' component.
+
+- In RouteConfig, we pass a array of route definitions.
+Each route definition, associates an url path to a component.
+@RouteConfig([
+  { 
+    path: '/albums',
+    name: 'Albums',
+    component: AlbumsComponent 
+  }
+])
+
+path = relative path url
+name = unique name we assign to our route (Should use Pascal case)
+component: AlbumsComponent 
+
+Here we say to angular that if the browser url changes to /albums, it should create an instance of AlbumsComponent
+and render it in the dom.
+
+- we import the component AlbumsComponent
+
+It is possible to set a route a default, adding another key to the route definition: useADefault: true
+
+What if the user goes to a route that does not exist ? We need to define another route definition that
+catches all invalid routes. 
+
+{ path: '/*other', name: 'Other', redirectTo: ['Albums'] }
+
+* is a wildcard: it matches any word coming after '/'
+We don't use a component because we don't want this invalid route to be visible in the browsers address bar. 
+So we redirect instead. redirectTo redirects the user to the specified route if the asked route does not
+exists.
+Diredirect to accepts an array with the name of the route to redirect to and if there are parameters, we
+can pass them to the array too.
+
+Router outlet
+-----
+When angular finds a matching route definition, creates a component and wants to insert it in the dom, how
+does it do ? Using router outlet, it's a directive
+We just add it to our template, where we want to define it.
+
+<router-outlet></router-outlet>
+
+As it is a custom directive, we need to register it with our component, otherwise, angular ignores them.
+We have to import RouterOutlet in the component, and include it in the 'directives' component decorator key.
+
+Adding links
+----
+We can use a directiver called routerLink 
+Using href attribute would cause a full page reload.
+
+<a [routerLink]="['Albums']">Albums</a>
+
+We bind the routerLink to an expression. 
+In the binding expression, we supply an array. It's the same idea than what we pass to the redirectTo option
+in the route definition.
+
+If you encouter an error like 'Can't bind to routerLink since it isn't a know native property', 
+it's because we use property binding, and we forgot to import this routerLink directive in
+our component meta data.
+
+So we can import RouterLink then put it in the directives array on the component meta data.
+There is a cleaner way to right the same code.
+
+Instead of importing RouterOutlet and RouterLink independently, we can import ROUTER_DIRECTIVES
+routerLink directive modifies the behaviour of anchors.
+
+Normal anchors cause a new http request to be send to the adress specified. It causes a full
+page reload. routerLink modifies its behaviour: tells our routing component (here AppComponent) to navigate
+the user to the target route, specified in its binding expression. The routing component
+finds the route definition, by using the name. then, it creates an instance of the component specified
+in the route definition and render it in he router outlet element.
+
+Route parameters
+----
+@RouteConfig([
+ { path: '/albums/:id', name: 'Album', component: AlbumComponent }
+)]
+
+:id is a route parameter
+
+For the link we can pass the id parameter this way:
+<a [routerLink]="['Album', { id: 10 }]"></a>
+The second index of the array is an object where we can pass all route parameter values.
+
+To get the value of a route parameter in a component, we can use
+the RouteParams class that we can import.
+import {RouteParams} from 'angular2/router';
+
+Imagine that we inject the instance of this class in our component:
+this._routeParams.get("id")
+
+Imperative navigation
+------
+This is when you can't interact with routes with the template and the routerLink directive.
+We first need to import the router class:
+import {Router} from 'angular2/router';
+
+Then we inject it in the constructor of the class where we want to use it.
+
+Then: 
+this._router.navigate(['Albums']);
+
+Implementing dirty checking
+------
+It's best practice to implement a mechanism to alert user when the quits a form page, 
+avoiding them to loose the information. We need to to this of course if the form is dirty.
+
+The router has lifecycle hooks that we can tap into to be notified during navigation:
+
+- CanActivate: when router is about the navigate into this component
+- CanDeactivate when router is about the navigate away from this component
+
+This names are in fact interfaces, the correspond to these methods:
+- routerCanDeactivate(next, prev)
+- routerCanActivate(next, prev)
+Next and prev correspond to previous component and next component.
+
+So we need to import the interface
+import {CanDeactivate} from 'angular2/router';
+
+implement the interface in our class
+class ... implements CanDeactivate {
+}
+
+Add the method routerCanDeactivate
+
+class ... implements CanDeactivate {
+  routerCanDeactivate(next, prev) {
+  }
+}
+
+the next and prev classes are instances of 'ComponentInstruction.
+This object contains some properties as 'componentType', the target component, or
+params (route params)
+
+To implement dirty checking, we need a reference to our form object. 
+So we need a model driven form.
+
+As the hook methods needs a boolean as a return value to process the transition. 
+This means the router will know if it can or not deactivate/activate the component
+and continue the navigation.
+
+So use:
+
+routerCanDeactivate(next, prev) {
+  // if (form.dirty) {
+  confirm("Are you sure?");
+}
+
+confirm method returns true if the user clicks 'yes' in the dialog box javascript launches.
+
+Structuring large apps
+-----
+How can we structure the app if we have a lot of routes to define ?
+This is related to Domain Driven Design and can be applied more extensively
+to the organisation of the whole application.
+
+We can divide large domains into smaller more manageable subdomains (feature areas)
+and move our components, services, classes, etc relative to each domain.
+If some elements are to be reused in different places, we can add a folder called 'shared'
+
+In this logic, instead of having an AppComponent with hundreds of routes, we could have
+a routing component 'per feature' and AppComponent can delegate the routing for that 
+feature area to that child routing component.
+
+In angular, in the routing definition, we can make 'incomplete routes' using this:
+@RouteConfig([
+  {
+    path: 'events/...',
+    component: 'EventsComponent'
+  }
+])
+
+The final route will be the combination of the parent route and the route from the
+child routing component (in this example from EventsComponent)
+
+So in EventsComponent:
+@RouteConfig([
+  {
+    path: '/',
+    component: 'MyComponent'
+  }
+])
