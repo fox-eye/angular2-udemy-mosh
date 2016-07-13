@@ -1,14 +1,16 @@
 import { Component } from "angular2/core";
+import { ROUTER_DIRECTIVES } from 'angular2/router';
 
 @Component( {
   selector: 'archives',
   template: `
     <ul>
-      <li *ngFor="#archive in archives">
-        {{ archive.year }} / {{ archive.month }}
+      <li *ngFor="#archive of archives">
+        <a [routerLink]="['Archive', { year: archive.year, month: archive.month }]"> {{ archive.year }}/{{ archive.month }} </a>      
       </li>
     </ul>
-  `
+  `,
+  directives: [ROUTER_DIRECTIVES]
 })
 export class ArchivesComponent {
 
@@ -25,5 +27,5 @@ export class ArchivesComponent {
       year: 2012,
       month: 11
     }
-  ]
+  ];
 }

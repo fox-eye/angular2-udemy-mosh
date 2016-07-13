@@ -1,15 +1,13 @@
 import {Component} from 'angular2/core';
+import {ArchivesComponent} from './archives.component';
+import {ArchiveComponent} from './archive.component';
+
 import {RouteConfig, ROUTER_DIRECTIVES} from 'angular2/router';
 
-import {AlbumsComponent} from './albums.component';
-import {AlbumComponent} from './album.component';
-import {ContactComponent} from './contact.component';
-
 @RouteConfig([
-  { path: '/albums', name: 'Albums', component: AlbumsComponent, useAsDefault: true },
-  { path: '/albums/:id', name: 'Album', component: AlbumComponent },
-  { path: '/contact', name: 'Contact', component: ContactComponent },
-  { path: '/*other', name: 'Other', redirectTo: ['Albums'] }
+  { path: '/', name: 'Archives', component: ArchivesComponent, useAsDefault: true },
+  { path: '/archives/:year/:month', name: 'Archive', component: ArchiveComponent },
+  { path: '/*other', name: 'Other', redirectTo: ['Archives'] }
 ])
 @Component({
     selector: 'my-app',
